@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>正在登录 · 百亿补贴</title>
+<style>
+:root{
+  --primary:#0058A8; --on-primary:#FFFFFF;
+  --background:#FAF9FD; --on-background:#191C20;
+  --surface-container-low:#F4F3F8; --surface-container-high:#E8E7EC;
+  --on-surface-variant:#42474E; --outline-variant:#C2C7CF;
+  --error-container:#F9DEDC; --on-error-container:#410E0B;
+  --radius-lg:28px; --radius-full:999px;
+  --duration-medium:250ms; --easing-standard:cubic-bezier(.2,0,0,1);
+  --font:Roboto,"Roboto Flex",system-ui,-apple-system,"Segoe UI","Noto Sans SC","PingFang SC",sans-serif;
+}
+[data-theme="dark"]{
+  --primary:#A3C8FF; --on-primary:#002F59;
+  --background:#111418; --on-background:#E0E2E8;
+  --surface-container-low:#191C20; --surface-container-high:#282A2F;
+  --on-surface-variant:#C2C7CF; --outline-variant:#42474E;
+  --error-container:#8C1D18; --on-error-container:#F9DEDC;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100dvh;min-height:100vh;background:var(--background)}
+body{font-family:var(--font);color:var(--on-background);display:grid;place-items:center;padding:24px;
+  transition:background-color var(--duration-medium) var(--easing-standard),color var(--duration-medium) var(--easing-standard)}
+:focus-visible{outline:2px solid var(--primary);outline-offset:2px;border-radius:8px}
+.skip-link{position:absolute;left:16px;top:-60px;z-index:100;background:var(--on-background);color:var(--background);
+  padding:10px 16px;border-radius:var(--radius-full);text-decoration:none}
+.skip-link:focus{top:16px}
+.card{width:min(420px,100%);background:var(--surface-container-low);border-radius:var(--radius-lg);padding:32px;
+  display:flex;flex-direction:column;gap:16px;align-items:center;text-align:center}
+.card h1{font-size:20px;font-weight:600}
+.card p{font-size:14px;color:var(--on-surface-variant)}
+.error-box{background:var(--error-container);color:var(--on-error-container);border-radius:12px;padding:12px 16px;font-size:13px}
+.m3-btn{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 20px;border-radius:var(--radius-full);
+  background:var(--primary);color:var(--on-primary);text-decoration:none;font-weight:500;border:none;cursor:pointer}
+.m3-ripple-surface{position:relative;overflow:hidden;isolation:isolate}
+.m3-ripple{position:absolute;border-radius:50%;pointer-events:none;background:currentColor;
+  transform:scale(0);opacity:.24;animation:m3-ripple-in 520ms cubic-bezier(.2,0,0,1) forwards}
+@keyframes m3-ripple-in{0%{transform:scale(0);opacity:.24}70%{opacity:.13}100%{transform:scale(1);opacity:0}}
+.spinner{width:36px;height:36px;border-radius:var(--radius-full);border:3px solid var(--outline-variant);
+  border-top-color:var(--primary);animation:spin 800ms linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (min-width:720px){.card{padding:40px}}
+@media (prefers-reduced-motion:reduce){.spinner{animation-duration:1ms}}
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main">跳转到主要内容</a>
+<main id="main" class="card" role="status" aria-live="polite">
+  <div class="spinner" aria-hidden="true"></div>
+  <h1 id="callbackTitle">正在完成登录</h1>
+  <p id="callbackMsg">正在校验第三方授权信息，请稍候…</p>
+</main>
+
+<script>
+(function(){
+'use strict';
+var TOKEN_KEY = 'by_admin_token';
+function storage(){ try{ return sessionStorage; }catch(e){ return null; } }
+function readHash(){
+  var h = '';
+  try{ h = (location.hash || '').replace(/^#/, ''); }catch(e){ h = ''; }
+  if(!h) return {};
+  return h.split('&').reduce(function(o, kv){
+    var i = kv.indexOf('=');
+    if(i > 0) o[decodeURIComponent(kv.slice(0,i))] = decodeURIComponent(kv.slice(i+1));
+    return o;
+  }, {});
+}
+function showError(msg){
+  var main = document.getElementById('main');
+  document.querySelector('.spinner').style.display = 'none';
+  document.getElementById('callbackTitle').textContent = '登录未完成';
+  var box = document.createElement('div');
+  box.className = 'error-box';
+  box.textContent = msg;
+  main.appendChild(box);
+  var link = document.createElement('a');
+  link.className = 'm3-btn';
+  link.href = '/admin.html';
+  link.textContent = '返回登录页';
+  main.appendChild(link);
+}
+var RIPPLE_SELECTOR = '.m3-btn';
+document.addEventListener('pointerdown', function(ev){
+  var host = ev.target.closest ? ev.target.closest(RIPPLE_SELECTOR) : null;
+  if(!host) return;
+  var rect = host.getBoundingClientRect();
+  var d = Math.max(rect.width, rect.height);
+  var rip = document.createElement('span');
+  rip.className = 'm3-ripple';
+  rip.style.width = rip.style.height = d + 'px';
+  rip.style.left = (ev.clientX - rect.left - d/2) + 'px';
+  rip.style.top = (ev.clientY - rect.top - d/2) + 'px';
+  host.appendChild(rip);
+  setTimeout(function(){ rip.remove(); }, 540);
+});
+
+(function init(){
+  var hash = readHash();
+  if(hash.error){ showError(hash.error); return; }
+  if(!hash.token){ showError('缺少登录凭证，请重新登录'); return; }
+  var ss = storage();
+  if(ss){ try{ ss.setItem(TOKEN_KEY, hash.token); }catch(e){} }
+  setTimeout(function(){
+    try{ location.replace('/admin.html'); }
+    catch(e){ document.getElementById('callbackMsg').textContent = '请点击下方按钮返回登录页'; }
+  }, 300);
+})();
+})();
+</script>
+</body>
+</html>
