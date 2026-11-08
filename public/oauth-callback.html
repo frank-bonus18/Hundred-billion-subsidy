@@ -59,8 +59,8 @@ body{font-family:var(--font);color:var(--on-background);display:grid;place-items
 <script>
 (function(){
 'use strict';
-var TOKEN_KEY = 'by_admin_token';
-function storage(){ try{ return sessionStorage; }catch(e){ return null; } }
+var TOKEN_KEY = 'by_token';
+function storage(){ try{ return localStorage; }catch(e){ return null; } }
 function readHash(){
   var h = '';
   try{ h = (location.hash || '').replace(/^#/, ''); }catch(e){ h = ''; }

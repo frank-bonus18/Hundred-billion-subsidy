@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0058A8">
+<title>控制台 · 百亿补贴</title>
+<style>
+:root{
+  --primary:#0058A8; --on-primary:#FFFFFF; --primary-container:#D3E3FF; --on-primary-container:#001A34;
+  --secondary:#425F80; --secondary-container:#D7E3FB; --on-secondary-container:#001C36;
+  --tertiary:#59588B; --tertiary-container:#E2E0FF; --on-tertiary-container:#161544;
+  --error:#B3261E; --on-error:#FFFFFF; --error-container:#F9DEDC; --on-error-container:#410E0B;
+  --background:#FAF9FD; --on-background:#191C20; --surface:#FAF9FD; --on-surface:#191C20;
+  --surface-variant:#DAE2ED; --on-surface-variant:#42474E;
+  --surface-container-lowest:#FFFFFF; --surface-container-low:#F4F3F8; --surface-container:#EEEDF2;
+  --surface-container-high:#E8E7EC; --outline:#707884; --outline-variant:#C2C7CF;
+  --success:#2E7D46;
+  --on-success:#FFFFFF;
+  --inverse-surface:#2E3135;
+  --inverse-on-surface:#F0F0F6;
+  --radius-xs:8px; --radius-sm:12px; --radius-md:16px; --radius-lg:28px; --radius-full:999px;
+  --ripple-opacity:.24; --state-hover:.08; --state-focus:.12;
+  --shadow-1:0 1px 2px rgba(0,0,0,.30),0 1px 3px 1px rgba(0,0,0,.15);
+  --duration-short:150ms; --duration-medium:250ms; --easing-standard:cubic-bezier(.2,0,0,1);
+  --font:Roboto,"Roboto Flex",system-ui,-apple-system,"Segoe UI","Noto Sans SC","PingFang SC",sans-serif;
+}
+[data-theme="dark"]{
+  --primary:#A3C8FF; --on-primary:#002F59; --primary-container:#00437F; --on-primary-container:#D3E3FF;
+  --secondary:#BBC7E0; --secondary-container:#2A4768; --on-secondary-container:#D7E3FB;
+  --tertiary:#C5C1FF; --tertiary-container:#424173; --on-tertiary-container:#E2E0FF;
+  --error:#F2B8B5; --on-error:#601410; --error-container:#8C1D18; --on-error-container:#F9DEDC;
+  --background:#111418; --on-background:#E0E2E8; --surface:#111418; --on-surface:#E0E2E8;
+  --surface-variant:#404854; --on-surface-variant:#C2C7CF;
+  --surface-container-lowest:#0C0E12; --surface-container-low:#191C20; --surface-container:#1D2024;
+  --surface-container-high:#282A2F; --outline:#8A929E; --outline-variant:#42474E;
+  --success:#9CE8AE;
+  --on-success:#2E7D46;
+  --inverse-surface:#E0E2E8;
+  --inverse-on-surface:#2E3135;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100dvh;background:var(--background)}
+body{font-family:var(--font);color:var(--on-background);line-height:1.5;-webkit-tap-highlight-color:transparent;
+  transition:background-color var(--duration-medium) var(--easing-standard),color var(--duration-medium) var(--easing-standard)}
+button,input,select{font-family:inherit;font-size:inherit;color:inherit}
+a{color:inherit;text-decoration:none}
+:focus-visible{outline:2px solid var(--primary);outline-offset:2px;border-radius:var(--radius-xs)}
+.m3-ripple-surface{position:relative;overflow:hidden;isolation:isolate}
+.m3-ripple{position:absolute;border-radius:50%;pointer-events:none;background:currentColor;transform:scale(0);opacity:var(--ripple-opacity);animation:rip 520ms var(--easing-standard) forwards}
+@keyframes rip{0%{transform:scale(0);opacity:var(--ripple-opacity)}70%{opacity:calc(var(--ripple-opacity)*.55)}100%{transform:scale(1);opacity:0}}
+.wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+.topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:14px;padding:12px 20px;background:var(--surface-container-low);border-bottom:1px solid var(--outline-variant)}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.brand-mark{width:40px;height:40px;border-radius:var(--radius-md);background:var(--primary);color:var(--on-primary);display:grid;place-items:center;flex:none}
+.brand-mark svg{width:24px;height:24px}
+.brand h1{font-size:18px;font-weight:600}
+.brand p{font-size:12px;color:var(--on-surface-variant)}
+.spacer{flex:1}
+.navlink{padding:8px 14px;border-radius:var(--radius-full);color:var(--on-surface-variant)}
+.navlink.active{background:var(--primary-container);color:var(--on-primary-container)}
+.m3-icon-btn{width:40px;height:40px;border-radius:var(--radius-full);border:none;background:transparent;color:var(--on-surface-variant);display:grid;place-items:center;cursor:pointer}
+.m3-icon-btn svg{width:22px;height:22px}
+.m3-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:40px;padding:0 20px;border-radius:var(--radius-full);border:1px solid transparent;cursor:pointer;font-weight:500}
+.m3-filled{background:var(--primary);color:var(--on-primary)}
+.m3-outline{background:transparent;border-color:var(--outline);color:var(--primary)}
+.m3-text{background:transparent;color:var(--primary)}
+.m3-btn svg{width:18px;height:18px}
+.m3-btn:disabled{opacity:.38;cursor:not-allowed}
+.user-chip{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:var(--radius-full);background:var(--secondary-container);color:var(--on-secondary-container);font-size:14px;font-weight:500}
+main{padding:24px 0 48px}
+.page-head{margin-bottom:20px}
+.page-head h2{font-size:24px;font-weight:600}
+.page-head p{color:var(--on-surface-variant);margin-top:4px}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:18px 0}
+.card{background:var(--surface-container-low);border-radius:var(--radius-md);padding:18px;box-shadow:var(--shadow-1)}
+.card .k{font-size:13px;color:var(--on-surface-variant)}
+.card .v{font-size:22px;font-weight:600;margin-top:6px}
+.card .sub{font-size:12px;color:var(--on-surface-variant);margin-top:4px}
+.panel{background:var(--surface-container-low);border-radius:var(--radius-md);padding:20px;margin-bottom:18px;box-shadow:var(--shadow-1)}
+.panel h3{font-size:16px;font-weight:600;margin-bottom:14px}
+.keybox{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--surface-container);border-radius:var(--radius-sm);padding:12px 14px}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.keybox .mono{flex:1;min-width:200px;word-break:break-all}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px}
+.field{display:flex;flex-direction:column;gap:6px;margin:10px 0}
+.field label{font-size:13px;color:var(--on-surface-variant)}
+.field input{height:42px;padding:0 14px;border:1px solid var(--outline);border-radius:var(--radius-sm);background:var(--surface-container-lowest);color:var(--on-background)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--outline-variant)}
+th{color:var(--on-surface-variant);font-weight:500;font-size:12px}
+.tbl-wrap{overflow-x:auto}
+.badge{display:inline-flex;padding:2px 10px;border-radius:var(--radius-full);font-size:12px}
+.badge.online{background:color-mix(in srgb,var(--success) 16%,transparent);color:var(--success)}
+.badge.pending{background:var(--tertiary-container);color:var(--on-tertiary-container)}
+.badge.paid{background:color-mix(in srgb,var(--success) 16%,transparent);color:var(--success)}
+.empty{color:var(--on-surface-variant);padding:24px 0;text-align:center}
+.code-line{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.invite-code{font-size:20px;font-weight:600;letter-spacing:2px}
+pre{background:var(--surface-container);border-radius:var(--radius-sm);padding:14px;overflow-x:auto;font-size:13px}
+.snack{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:var(--inverse-surface);color:var(--inverse-on-surface);padding:10px 18px;border-radius:var(--radius-full);opacity:0;transition:opacity var(--duration-short);z-index:50}
+.snack.show{opacity:1}
+@media(min-width:900px){.wrap{max-width:1080px}.cards{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:820px){.cards{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:520px){.cards{grid-template-columns:1fr}.navlink{display:none}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<a class="skip-link visually-hidden" href="#main">跳到主要内容</a>
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 4 7v10l8 5 8-5V7l-8-5zm0 2.3L17.8 8 12 11.7 6.2 8 12 4.3zM6 9.7l5 3.1v6.2l-5-3.1V9.7zm7 9.3v-6.2l5-3.1v6.2l-5 3.1z"/></svg></span>
+    <div><h1>百亿补贴</h1><p>API 中转站控制台</p></div>
+  </div>
+  <div class="spacer"></div>
+  <a class="navlink" href="/index.html">模型目录</a>
+  <a class="navlink active" href="/console.html">控制台</a>
+  <button class="m3-icon-btn" id="themeToggle" type="button" aria-label="切换深色或浅色模式">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.39 5.39 0 0 1-4.4 2.26 5.4 5.4 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/></svg>
+  </button>
+  <span class="user-chip" id="meChip" hidden></span>
+  <button class="m3-btn m3-text" id="logoutBtn" type="button">退出</button>
+</header>
+
+<main id="main" class="wrap">
+  <div class="page-head">
+    <h2>我的控制台</h2>
+    <p>查看额度与 API Key，跟踪调用用量，下单充值或兑换卡密。</p>
+  </div>
+
+  <section class="cards" id="quotaCards" aria-label="额度概览"></section>
+
+  <section class="panel">
+    <h3>API 接入</h3>
+    <div class="keybox">
+      <span class="k" style="color:var(--on-surface-variant)">Base URL</span>
+      <span class="mono" id="baseUrl">—</span>
+      <button class="m3-btn m3-outline m3-ripple-surface" type="button" id="copyBase">复制</button>
+    </div>
+    <div class="keybox" style="margin-top:12px">
+      <span class="k" style="color:var(--on-surface-variant)">API Key</span>
+      <span class="mono" id="apiKey">—</span>
+      <button class="m3-btn m3-outline m3-ripple-surface" type="button" id="copyKey">复制</button>
+      <button class="m3-btn m3-text m3-ripple-surface" type="button" id="rotateKey">重置</button>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h3>接入示例（OpenAI 兼容）</h3>
+    <pre id="codeSample"></pre>
+  </section>
+
+  <section class="panel">
+    <h3>我的订单</h3>
+    <div class="tbl-wrap"><table id="ordersTable">
+      <thead><tr><th>订单号</th><th>类型</th><th>金额</th><th>到账额度</th><th>状态</th><th>时间</th></tr></thead>
+      <tbody id="ordersBody"></tbody>
+    </table></div>
+    <div class="row">
+      <a class="m3-btn m3-filled m3-ripple-surface" href="/index.html#plans">去充值 / 购买套餐</a>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h3>调用用量</h3>
+    <div class="cards" id="usageStats" style="margin:0 0 14px"></div>
+    <div class="tbl-wrap"><table id="usageTable">
+      <thead><tr><th>时间</th><th>模型</th><th>输入</th><th>缓存命中</th><th>输出</th><th>费用</th></tr></thead>
+      <tbody id="usageBody"></tbody>
+    </table></div>
+  </section>
+
+  <section class="panel">
+    <h3>兑换卡密</h3>
+    <div class="field" style="max-width:360px">
+      <label for="redeemCode">兑换码</label>
+      <input id="redeemCode" type="text" autocomplete="off" placeholder="输入卡密兑换码">
+    </div>
+    <button class="m3-btn m3-filled m3-ripple-surface" type="button" id="redeemBtn">兑换到账</button>
+  </section>
+
+  <section class="panel">
+    <h3>邀请返佣</h3>
+    <p style="color:var(--on-surface-variant);font-size:14px">邀请好友注册，好友套餐/充值到账后，按比例返还额度。</p>
+    <div class="code-line" style="margin-top:12px">
+      <span class="invite-code mono" id="inviteCode">—</span>
+      <button class="m3-btn m3-outline m3-ripple-surface" type="button" id="copyInvite">复制邀请码</button>
+      <span class="badge pending" id="inviteRate"></span>
+    </div>
+    <div class="tbl-wrap" style="margin-top:14px"><table id="inviteTable">
+      <thead><tr><th>被邀请人</th><th>套餐</th><th>注册时间</th></tr></thead>
+      <tbody id="inviteBody"></tbody>
+    </table></div>
+  </section>
+</main>
+
+<div class="snack" id="snackbar" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+'use strict';
+var TOKEN_KEY='by_token';
+function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
+function lsRemove(k){try{localStorage.removeItem(k)}catch(e){}}
+function $(s){return document.querySelector(s)}
+function el(id){return document.getElementById(id)}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function fmtTime(iso){if(!iso)return'—';var d=new Date(iso);return isNaN(d)?'—':d.toLocaleString('zh-CN',{hour12:false})}
+function money(n){return '¥'+(Number(n)||0).toFixed(2)}
+var state={token:lsGet(TOKEN_KEY)||'',me:null,orders:[],usage:null,invite:null,meta:null};
+var snackTimer=null;
+function snackbar(msg){var b=el('snackbar');b.textContent=msg;b.classList.add('show');clearTimeout(snackTimer);snackTimer=setTimeout(function(){b.classList.remove('show')},2600)}
+function api(path,opts){
+  opts=opts||{};
+  var headers=Object.assign({'Content-Type':'application/json'},opts.headers||{});
+  if(state.token)headers['Authorization']='Bearer '+state.token;
+  return fetch(path,Object.assign({},opts,{headers:headers})).then(function(r){return r.json().then(function(j){return{status:r.status,body:j}})})
+}
+function copy(text,msg){
+  function done(){snackbar(msg||'已复制')}
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(done).catch(done)}
+  else{var ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();try{document.execCommand('copy')}catch(e){}ta.remove();done()}
+}
+function logout(){
+  api('/api/logout',{method:'POST'}).catch(function(){});
+  lsRemove(TOKEN_KEY);
+  location.href='/admin.html';
+}
+function renderMe(){
+  var m=state.me;
+  var chip=el('meChip');
+  if(m){chip.hidden=false;chip.textContent=m.displayName||m.username}
+}
+function renderQuota(){
+  var m=state.me||{};
+  var free=m.freeUsed||{count:0,date:''};
+  var cards=[
+    {k:'当前套餐',v:({free:'免费',hobby:'Hobby',pro:'Pro'}[m.plan]||m.plan||'免费'),sub:m.planExpireAt?'到期 '+fmtTime(m.planExpireAt):'—'},
+    {k:'已用额度',v:money(m.quotaUsed),sub:'按 token 计费扣减'},
+    {k:'剩余额度',v:money(m.quotaLeft),sub:'可调用额度'},
+    {k:'免费模型今日',v:(free.count||0)+' 次',sub:'不扣额度'}
+  ];
+  el('quotaCards').innerHTML=cards.map(function(c){return '<div class="card"><div class="k">'+esc(c.k)+'</div><div class="v">'+esc(c.v)+'</div><div class="sub">'+esc(c.sub)+'</div></div>'}).join('');
+}
+function renderKeys(){
+  var m=state.me||{};
+  var host=location.host;
+  el('baseUrl').textContent=location.protocol+'//'+host+'/v1';
+  el('apiKey').textContent=m.apiKey||'—';
+  el('codeSample').textContent='curl '+location.protocol+'//'+host+'/v1/chat/completions \\\n'
+    +'  -H "Authorization: Bearer '+(m.apiKey||'sk_by_***')+'" \\\n'
+    +'  -H "Content-Type: application/json" \\\n'
+    +'  -d \'{"model":"'+((state.meta&&state.meta.models&&state.meta.models[0]&&state.meta.models[0].id)||'gpt-4o')+'","messages":[{"role":"user","content":"你好"}]}\'';
+}
+function renderOrders(){
+  var body=el('ordersBody');
+  if(!state.orders.length){body.innerHTML='<tr><td colspan="5" class="empty">暂无订单</td></tr>';return}
+  body.innerHTML=state.orders.map(function(o){
+    var type=o.kind==='plan'?'套餐':'额度充值';
+    var st=o.status==='paid'?'<span class="badge paid">已到账</span>':'<span class="badge pending">待确认</span>';
+    return '<tr><td class="mono">'+esc(o.id)+'</td><td>'+esc(type+(o.planName?' · '+o.planName:''))+'</td><td>'+money(o.amount)+'</td><td>'+money(o.quota)+'</td><td>'+st+'</td><td>'+fmtTime(o.createdAt)+'</td></tr>';
+  }).join('');
+}
+function renderUsage(){
+  var u=state.usage||{records:[],stats:{calls:0,totalTokens:0,totalCost:0}};
+  var s=u.stats||{};
+  el('usageStats').innerHTML=[
+    {k:'调用次数',v:s.calls||0},
+    {k:'总 Token',v:fmtNum(s.totalTokens||0)},
+    {k:'累计费用',v:money(s.totalCost)}
+  ].map(function(c){return '<div class="card"><div class="k">'+esc(c.k)+'</div><div class="v">'+esc(c.v)+'</div></div>'}).join('');
+  var body=el('usageBody');
+  if(!u.records.length){body.innerHTML='<tr><td colspan="6" class="empty">暂无调用记录</td></tr>';return}
+  body.innerHTML=u.records.slice(0,50).map(function(r){
+    return '<tr><td>'+fmtTime(r.createdAt)+'</td><td class="mono">'+esc(r.model)+'</td><td>'+fmtNum(r.promptTokens||0)+'</td><td>'+fmtNum(r.cachedTokens||0)+'</td><td>'+fmtNum(r.completionTokens||0)+'</td><td>'+(r.free?'免费':money(r.cost))+'</td></tr>';
+  }).join('');
+}
+function fmtNum(n){return Number(n||0).toLocaleString('zh-CN')}
+function renderInvite(){
+  var iv=state.invite||{code:'',rate:0,referrals:[]};
+  el('inviteCode').textContent=iv.code||'—';
+  el('inviteRate').textContent='返佣 '+(Math.round((iv.rate||0)*100))+'%';
+  var body=el('inviteBody');
+  if(!iv.referrals.length){body.innerHTML='<tr><td colspan="3" class="empty">还没有被邀请人</td></tr>';return}
+  body.innerHTML=iv.referrals.map(function(r){return '<tr><td>'+esc(r.displayName||r.username)+'</td><td>'+esc(r.plan||'free')+'</td><td>'+fmtTime(r.createdAt)+'</td></tr>'}).join('');
+}
+async function loadAll(){
+  var me=await api('/api/me');
+  if(me.status!==200){location.href='/admin.html';return}
+  state.me=me.body;renderMe();renderQuota();renderKeys();
+  var meta=await api('/api/plans').catch(function(){return{body:{models:[]}}});
+  state.meta=meta.body;renderKeys();
+  var orders=await api('/api/orders');state.orders=orders.body.orders||[];renderOrders();
+  var usage=await api('/api/usage');state.usage=usage.body;renderUsage();
+  var invite=await api('/api/invite');state.invite=invite.body;renderInvite();
+}
+el('themeToggle').addEventListener('click',function(){var r=document.documentElement;r.setAttribute('data-theme',r.getAttribute('data-theme')==='dark'?'light':'dark')});
+el('logoutBtn').addEventListener('click',logout);
+el('copyKey').addEventListener('click',function(){copy(state.me&&state.me.apiKey,'Key 已复制')});
+el('copyBase').addEventListener('click',function(){copy(el('baseUrl').textContent,'Base URL 已复制')});
+el('copyInvite').addEventListener('click',function(){copy(state.invite&&state.invite.code,'邀请码已复制')});
+el('rotateKey').addEventListener('click',async function(){
+  var r=await api('/api/rotate-key',{method:'POST'});
+  if(r.status===200){state.me.apiKey=r.body.apiKey;renderKeys();snackbar('Key 已重置，旧 Key 立即失效')}
+  else snackbar(r.body.error||'重置失败');
+});
+el('redeemBtn').addEventListener('click',async function(){
+  var code=el('redeemCode').value.trim();
+  if(!code){snackbar('请输入兑换码');return}
+  var r=await api('/api/redeem',{method:'POST',body:JSON.stringify({code:code})});
+  if(r.status===200){snackbar('兑换成功，额度已到账');el('redeemCode').value='';loadAll()}
+  else snackbar(r.body.error||'兑换失败');
+});
+document.addEventListener('pointerdown',function(ev){
+  var host=ev.target.closest('.m3-ripple-surface');if(!host)return;
+  var rect=host.getBoundingClientRect();var d=Math.max(rect.width,rect.height);
+  var rip=document.createElement('span');rip.className='m3-ripple';
+  rip.style.width=rip.style.height=d+'px';rip.style.left=(ev.clientX-rect.left-d/2)+'px';rip.style.top=(ev.clientY-rect.top-d/2)+'px';
+  host.appendChild(rip);setTimeout(function(){rip.remove()},540);
+});
+loadAll().catch(function(){});
+})();
+</script>
+</body>
+</html>

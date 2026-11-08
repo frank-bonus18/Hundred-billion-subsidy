@@ -290,17 +290,23 @@ a{color:inherit}
 <main id="main">
   <!-- 登录视图 -->
   <section class="login-wrap" id="loginView">
-    <form class="login-card" id="loginForm" novalidate>
+    <div class="login-card" id="loginCard">
       <span class="brand-mark" aria-hidden="true">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5zm0 2c-3.34 0-10 1.67-10 5v3h20v-3c0-3.33-6.66-5-10-5z"/></svg>
       </span>
-      <h2>管理员登录</h2>
-      <p class="sub">登录后可维护平台全部 AI 模型路由</p>
+      <h2 id="authTitle">账号登录</h2>
+      <p class="sub">管理员与普通用户同一入口，登录后按角色进入对应页面</p>
       <div class="login-error" id="loginError" role="alert"></div>
+      <div class="mode-row" role="group" aria-label="登录或注册">
+        <button class="m3-chip selected" type="button" data-auth="login">登录</button>
+        <button class="m3-chip" type="button" data-auth="register">注册新账号</button>
+      </div>
+      <div id="loginSection">
       <div class="mode-row" role="group" aria-label="登录方式">
         <button class="m3-chip selected" type="button" data-mode="password">账号密码</button>
         <button class="m3-chip" type="button" data-mode="email">邮箱验证码</button>
       </div>
+      <form id="loginForm" novalidate>
       <div id="pwdPanel">
         <div class="field">
           <label for="loginUser">账号</label>
@@ -312,6 +318,8 @@ a{color:inherit}
         </div>
         <button class="m3-btn m3-filled m3-ripple-surface" type="submit" id="loginSubmit">登 录</button>
       </div>
+      </form>
+      <form id="emailForm" hidden novalidate>
       <div id="emailPanel" hidden>
         <div class="field">
           <label for="emailInput">邮箱</label>
@@ -326,6 +334,7 @@ a{color:inherit}
         </div>
         <button class="m3-btn m3-filled m3-ripple-surface" type="button" id="emailLoginBtn">登 录</button>
       </div>
+      </form>
       <div class="oauth-divider">或使用第三方账号登录</div>
       <div class="oauth-row">
         <a class="m3-oauth" href="/api/oauth/github/start" title="GitHub 登录（未配置应用时使用演示身份）">
@@ -341,7 +350,27 @@ a{color:inherit}
           Google
         </a>
       </div>
-    </form>
+      </div>
+      <form id="registerForm" hidden novalidate>
+        <div class="field">
+          <label for="regUser">用户名</label>
+          <input id="regUser" type="text" autocomplete="username" required placeholder="3-20 位字母、数字或下划线">
+        </div>
+        <div class="field">
+          <label for="regEmail">邮箱（选填）</label>
+          <input id="regEmail" type="email" autocomplete="email" placeholder="you@example.com">
+        </div>
+        <div class="field">
+          <label for="regPass">密码</label>
+          <input id="regPass" type="password" autocomplete="new-password" required minlength="6" placeholder="至少 6 位">
+        </div>
+        <div class="field">
+          <label for="regPass2">确认密码</label>
+          <input id="regPass2" type="password" autocomplete="new-password" required minlength="6">
+        </div>
+        <button class="m3-btn m3-filled m3-ripple-surface" type="submit" id="regSubmit">注册并登录</button>
+      </form>
+    </div>
   </section>
 
   <!-- 控制台视图 -->
@@ -354,6 +383,22 @@ a{color:inherit}
       <button class="rail-item" type="button" data-view="routes">
         <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v2h8v-2h-8zM7 9v2H3V9h4zm14 4v-2H13v2h8zm-6-4h-4v2h4V9zm4 0v2h4V9h-4z"/></svg>
         模型路由
+      </button>
+      <button class="rail-item" type="button" data-view="users">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16 11c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 3-1.34 3-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5C15 14.17 10.33 13 8 13zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+        用户
+      </button>
+      <button class="rail-item" type="button" data-view="orders">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm-9 14H7v-2h3v2zm0-4H7v-2h3v2zm0-4H7V7h3v2zm7 4h-5v-2h5v2zm0-4h-5V7h5v2z"/></svg>
+        订单
+      </button>
+      <button class="rail-item" type="button" data-view="cards">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 14H4V8h16v10zM6 12h4v2H6z"/></svg>
+        卡密
+      </button>
+      <button class="rail-item" type="button" data-view="referrals">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l2.4 7.2H22l-6 4.6 2.3 7.2-6.3-4.5-6.3 4.5L8 13.8 2 9.2h7.6z"/></svg>
+        返佣
       </button>
       <button class="rail-item" type="button" id="logoutBtn">
         <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5-5-5zM4 5h8V3H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8v-2H4V5z"/></svg>
@@ -394,6 +439,77 @@ a{color:inherit}
         <div class="panel" style="margin-top:16px">
           <div class="panel-head"><h3>模型列表</h3><span class="user-chip" id="routeCount"></span></div>
           <div id="adminList"></div>
+        </div>
+      </section>
+
+      <!-- 用户管理 -->
+      <section id="viewUsers" hidden>
+        <div class="panel">
+          <div class="filter-bar">
+            <div class="searchbar">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z"/></svg>
+              <input id="userSearch" type="search" placeholder="搜索用户名、昵称或邮箱" aria-label="搜索用户">
+            </div>
+          </div>
+        </div>
+        <div class="panel" style="margin-top:16px">
+          <div class="panel-head"><h3>用户列表</h3><span class="user-chip" id="userCount"></span></div>
+          <div class="tbl-wrap"><table id="usersTable">
+            <thead><tr><th>用户</th><th>角色</th><th>套餐</th><th>已用 / 额度</th><th>剩余</th><th>邀请码</th><th>操作</th></tr></thead>
+            <tbody id="usersBody"></tbody>
+          </table></div>
+        </div>
+      </section>
+
+      <!-- 订单管理 -->
+      <section id="viewOrders" hidden>
+        <div class="panel">
+          <div class="panel-head"><h3>订单列表</h3><span class="user-chip" id="orderCount"></span></div>
+          <div class="tbl-wrap"><table id="ordersTable">
+            <thead><tr><th>订单号</th><th>用户</th><th>类型</th><th>金额</th><th>额度</th><th>状态</th><th>下单时间</th><th>操作</th></tr></thead>
+            <tbody id="ordersBody"></tbody>
+          </table></div>
+        </div>
+      </section>
+
+      <!-- 卡密管理 -->
+      <section id="viewCards" hidden>
+        <div class="panel">
+          <div class="panel-head"><h3>批量生成卡密</h3></div>
+          <div class="filter-row" style="gap:12px;flex-wrap:wrap;align-items:center">
+            <label class="m3-select" style="display:flex;flex-direction:column;gap:6px">数量
+              <input id="cardCount" type="number" min="1" max="50" value="10" style="height:42px;padding:0 14px;border:1px solid var(--outline);border-radius:var(--radius-sm);background:var(--surface-container-lowest)">
+            </label>
+            <label style="display:flex;flex-direction:column;gap:6px">额度
+              <input id="cardQuota" type="number" min="0" value="100" style="height:42px;padding:0 14px;border:1px solid var(--outline);border-radius:var(--radius-sm);background:var(--surface-container-lowest)">
+            </label>
+            <label style="display:flex;flex-direction:column;gap:6px">套餐
+              <select id="cardPlan" class="m3-select" style="height:42px">
+                <option value="">仅额度</option>
+                <option value="hobby">Hobby</option>
+                <option value="pro">Pro</option>
+              </select>
+            </label>
+            <button class="m3-btn m3-filled m3-ripple-surface" id="genCards" type="button">生成卡密</button>
+          </div>
+        </div>
+        <div class="panel" style="margin-top:16px">
+          <div class="panel-head"><h3>卡密列表</h3><span class="user-chip" id="cardCountChip"></span></div>
+          <div class="tbl-wrap"><table id="cardsTable">
+            <thead><tr><th>兑换码</th><th>额度</th><th>套餐</th><th>状态</th><th>使用人</th><th>生成时间</th></tr></thead>
+            <tbody id="cardsBody"></tbody>
+          </table></div>
+        </div>
+      </section>
+
+      <!-- 返佣 -->
+      <section id="viewReferrals" hidden>
+        <div class="panel">
+          <div class="panel-head"><h3>邀请返佣关系</h3></div>
+          <div class="tbl-wrap"><table id="refTable">
+            <thead><tr><th>邀请人</th><th>邀请码</th><th>累计返佣</th><th>被邀请人</th></tr></thead>
+            <tbody id="refBody"></tbody>
+          </table></div>
         </div>
       </section>
     </div>
@@ -535,18 +651,20 @@ a{color:inherit}
 'use strict';
 
 /* ---------- 状态 ---------- */
-var TOKEN_KEY = 'by_admin_token';
+var TOKEN_KEY = 'by_token';
 var storage = {
-  get: function(k){ try{ return sessionStorage.getItem(k); }catch(e){ return null; } },
-  set: function(k,v){ try{ sessionStorage.setItem(k,v); }catch(e){} },
-  remove: function(k){ try{ sessionStorage.removeItem(k); }catch(e){} }
+  get: function(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } },
+  set: function(k,v){ try{ localStorage.setItem(k,v); }catch(e){} },
+  remove: function(k){ try{ localStorage.removeItem(k); }catch(e){} }
 };
 var state = {
   token: storage.get(TOKEN_KEY) || '',
   username: '',
   displayName: '',
+  role: '',
   provider: 'password',
   mode: 'password',
+  authMode: 'login',
   routes: [], groups: [],
   q:'', method:'ALL', group:'ALL', status:'ALL',
   view:'overview', editingId:null, pendingDelete:null
@@ -647,9 +765,29 @@ function applySession(body){
   state.token = body.token;
   state.username = body.username;
   state.displayName = body.displayName || body.username;
+  state.role = body.role || 'member';
   state.provider = body.provider || 'password';
   storage.set(TOKEN_KEY, state.token);
 }
+function routeAfterLogin(){
+  if(state.role === 'admin'){ showConsole(); }
+  else { location.href = '/index.html'; }
+}
+function switchAuth(mode){
+  state.authMode = mode;
+  document.querySelectorAll('[data-auth]').forEach(function(c){
+    c.classList.toggle('selected', c.dataset.auth === mode);
+  });
+  el('loginSection').hidden = mode !== 'login';
+  el('registerForm').hidden = mode !== 'register';
+  el('loginError').classList.remove('show');
+  el('authTitle').textContent = mode === 'register' ? '注册新账号' : '账号登录';
+  if(mode === 'register') el('regUser').focus(); else el('loginUser').focus();
+}
+document.addEventListener('click', function(ev){
+  var chip = ev.target.closest('[data-auth]');
+  if(chip) switchAuth(chip.dataset.auth);
+});
 
 el('loginForm').addEventListener('submit', async function(ev){
   ev.preventDefault();
@@ -671,7 +809,43 @@ el('loginForm').addEventListener('submit', async function(ev){
     applySession(data.body);
     el('loginPass').value = '';
     snackbar('登录成功，欢迎回来');
-    showConsole();
+    routeAfterLogin();
+  }catch(e){
+    errBox.textContent = '无法连接后端服务，请确认服务已启动';
+    errBox.classList.add('show');
+  }finally{
+    btn.disabled = false;
+  }
+});
+
+/* ---- 注册（普通用户，后端真实落库） ---- */
+el('registerForm').addEventListener('submit', async function(ev){
+  ev.preventDefault();
+  var errBox = el('loginError');
+  errBox.classList.remove('show');
+  var btn = el('regSubmit');
+  var pass = el('regPass').value, pass2 = el('regPass2').value;
+  if(pass !== pass2){ errBox.textContent = '两次输入的密码不一致'; errBox.classList.add('show'); return; }
+  btn.disabled = true;
+  try{
+    var data = await fetch('/api/register', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({
+        username: el('regUser').value.trim(),
+        email: el('regEmail').value.trim(),
+        password: pass
+      })
+    }).then(function(r){ return r.json().then(function(j){ return { status:r.status, body:j }; }); });
+    if(data.status !== 200){
+      var errs = data.body.errors;
+      errBox.textContent = (errs && errs[0]) || data.body.error || '注册失败，请稍后重试';
+      errBox.classList.add('show');
+      return;
+    }
+    applySession(data.body);
+    snackbar('注册成功，已为你登录');
+    routeAfterLogin();
   }catch(e){
     errBox.textContent = '无法连接后端服务，请确认服务已启动';
     errBox.classList.add('show');
@@ -763,10 +937,10 @@ el('emailLoginBtn').addEventListener('click', async function(){
       errBox.classList.add('show');
       return;
     }
-    applySession(data.body);
+    applySession(data);
     el('codeInput').value = '';
     snackbar('登录成功，欢迎回来');
-    showConsole();
+    routeAfterLogin();
   }catch(e){
     errBox.textContent = '无法连接后端服务，请确认服务已启动';
     errBox.classList.add('show');
@@ -841,6 +1015,107 @@ async function loadRoutes(){
   renderAdminList();
 }
 
+/* ---------- 后台：用户 / 订单 / 卡密 / 返佣 ---------- */
+function money(n){ return '¥' + (Number(n) || 0).toFixed(2); }
+function planLabel(p){ return ({free:'免费',hobby:'Hobby',pro:'Pro'})[p] || p || '免费'; }
+
+async function loadUsers(){
+  var q = el('userSearch').value.trim();
+  try{
+    var data = await api('/api/panel/users' + (q ? '?q=' + encodeURIComponent(q) : ''));
+    renderUsers(data.users || []);
+  }catch(e){ snackbar(e.message || '加载用户失败'); }
+}
+function renderUsers(list){
+  el('userCount').textContent = list.length + ' 人';
+  el('usersBody').innerHTML = list.map(function(u){
+    var ops = [
+      '<button class="m3-btn m3-text m3-ripple-surface" style="height:32px;padding:0 12px" data-act="plan" data-id="'+escapeHtml(u.id)+'" data-plan="pro">Pro</button>',
+      '<button class="m3-btn m3-text m3-ripple-surface" style="height:32px;padding:0 12px" data-act="plan" data-id="'+escapeHtml(u.id)+'" data-plan="hobby">Hobby</button>',
+      '<button class="m3-btn m3-text m3-ripple-surface" style="height:32px;padding:0 12px" data-act="plan" data-id="'+escapeHtml(u.id)+'" data-plan="free">免费</button>',
+      '<button class="m3-btn m3-text m3-ripple-surface" style="height:32px;padding:0 12px" data-act="reset" data-id="'+escapeHtml(u.id)+'">清零用量</button>',
+      '<button class="m3-btn m3-text m3-ripple-surface" style="height:32px;padding:0 12px" data-act="password" data-id="'+escapeHtml(u.id)+'">改密</button>'
+    ].join('');
+    return '<tr><td>'+escapeHtml(u.displayName || u.username)+'<br><span style="color:var(--on-surface-variant);font-size:12px">'+escapeHtml(u.username)+(u.email ? ' / '+escapeHtml(u.email) : '')+'</span></td>'
+      +'<td>'+escapeHtml(u.role)+'</td><td>'+escapeHtml(planLabel(u.plan))+'</td>'
+      +'<td>'+fmtNum(u.quotaUsed)+' / '+money(u.quotaLimit)+'</td><td>'+money(u.quotaLeft)+'</td>'
+      +'<td class="mono">'+escapeHtml(u.inviteCode)+'</td><td>'+ops+'</td></tr>';
+  }).join('');
+}
+
+async function loadPanelOrders(){
+  try{ var d = await api('/api/panel/orders'); renderPanelOrders(d.orders || []); }
+  catch(e){ snackbar(e.message || '加载订单失败'); }
+}
+function renderPanelOrders(list){
+  el('orderCount').textContent = list.length + ' 笔';
+  el('ordersBody').innerHTML = list.map(function(o){
+    var st = o.status === 'paid' ? '<span class="badge paid">已到账</span>' : '<span class="badge pending">待确认</span>';
+    var act = o.status !== 'paid' ? '<button class="m3-btn m3-filled m3-ripple-surface" style="height:32px;padding:0 14px" data-act="paid" data-id="'+escapeHtml(o.id)+'">确认到账</button>' : '—';
+    return '<tr><td class="mono">'+escapeHtml(o.id)+'</td><td>'+escapeHtml(o.username)+'</td><td>'+escapeHtml((o.kind==='plan'?'套餐':'充值')+(o.planName?' · '+o.planName:''))+'</td>'
+      +'<td>'+money(o.amount)+'</td><td>'+money(o.quota)+'</td><td>'+st+'</td><td>'+fmtTime(o.createdAt)+'</td><td>'+act+'</td></tr>';
+  }).join('');
+}
+
+async function loadCards(){
+  try{ var d = await api('/api/panel/cards'); renderCards(d.cards || []); }
+  catch(e){ snackbar(e.message || '加载卡密失败'); }
+}
+function renderCards(list){
+  el('cardCountChip').textContent = list.length + ' 张';
+  el('cardsBody').innerHTML = list.map(function(c){
+    var st = c.status === 'used' ? '<span class="badge paid">已使用</span>' : '<span class="badge pending">未使用</span>';
+    return '<tr><td class="mono">'+escapeHtml(c.code)+'</td><td>'+money(c.quota)+'</td><td>'+escapeHtml(c.plan ? planLabel(c.plan) : '仅额度')+'</td><td>'+st+'</td><td>'+escapeHtml(c.usedBy || '—')+'</td><td>'+fmtTime(c.createdAt)+'</td></tr>';
+  }).join('');
+}
+
+async function loadReferrals(){
+  try{ var d = await api('/api/panel/referrals'); renderReferrals(d.referrals || []); }
+  catch(e){ snackbar(e.message || '加载返佣失败'); }
+}
+function renderReferrals(list){
+  el('refBody').innerHTML = list.map(function(r){
+    var names = (r.invitees || []).map(function(x){ return escapeHtml(x.displayName || x.username); }).join('、');
+    return '<tr><td>'+escapeHtml(r.inviter)+'</td><td class="mono">'+escapeHtml(r.inviteCode)+'</td><td>'+money(r.rebateEarned)+'</td><td>'+names+'</td></tr>';
+  }).join('');
+}
+
+function fmtTime(iso){ if(!iso) return '—'; var d = new Date(iso); return isNaN(d) ? '—' : d.toLocaleString('zh-CN', {hour12:false}); }
+
+el('genCards').addEventListener('click', async function(){
+  var count = Number(el('cardCount').value) || 1;
+  var quota = Number(el('cardQuota').value) || 0;
+  var plan = el('cardPlan').value || null;
+  try{
+    await api('/api/panel/cards', {method:'POST', body: JSON.stringify({count:count, quota:quota, plan:plan})});
+    snackbar('卡密已生成'); loadCards();
+  }catch(e){ snackbar(e.message || '生成失败'); }
+});
+el('userSearch').addEventListener('input', function(){ loadUsers(); });
+
+document.addEventListener('click', async function(ev){
+  var btn = ev.target.closest('[data-act]');
+  if(!btn) return;
+  var act = btn.dataset.act, id = btn.dataset.id;
+  try{
+    if(act === 'plan'){
+      await api('/api/panel/users', {method:'PUT', body: JSON.stringify({id:id, plan:btn.dataset.plan})});
+      snackbar('套餐已更新'); loadUsers();
+    }else if(act === 'reset'){
+      await api('/api/panel/users', {method:'PUT', body: JSON.stringify({id:id, resetUsage:true})});
+      snackbar('用量已清零'); loadUsers();
+    }else if(act === 'password'){
+      var pwd = window.prompt('输入新密码（至少 6 位）');
+      if(!pwd) return;
+      await api('/api/panel/users/password', {method:'POST', body: JSON.stringify({id:id, password:pwd})});
+      snackbar('密码已重置');
+    }else if(act === 'paid'){
+      await api('/api/panel/orders/paid', {method:'POST', body: JSON.stringify({id:id, planDays:30})});
+      snackbar('订单已到账'); loadPanelOrders();
+    }
+  }catch(e){ snackbar(e.message || '操作失败'); }
+});
+
 /* ---------- 视图切换 ---------- */
 document.addEventListener('click', function(ev){
   var nav = ev.target.closest('.rail-item[data-view]');
@@ -849,6 +1124,14 @@ document.addEventListener('click', function(ev){
   document.querySelectorAll('.rail-item[data-view]').forEach(function(b){ b.classList.toggle('selected', b === nav); });
   el('viewOverview').hidden = state.view !== 'overview';
   el('viewRoutes').hidden = state.view !== 'routes';
+  el('viewUsers').hidden = state.view !== 'users';
+  el('viewOrders').hidden = state.view !== 'orders';
+  el('viewCards').hidden = state.view !== 'cards';
+  el('viewReferrals').hidden = state.view !== 'referrals';
+  if(state.view === 'users') loadUsers();
+  if(state.view === 'orders') loadPanelOrders();
+  if(state.view === 'cards') loadCards();
+  if(state.view === 'referrals') loadReferrals();
 });
 
 /* ---------- 方法 chips ---------- */
@@ -1127,9 +1410,11 @@ renderChips();
     var me = await api('/api/me');
     state.username = me.username;
     state.displayName = me.displayName || me.username;
+    state.role = me.role || 'member';
     state.provider = me.provider || state.provider;
-    showConsole();
-  }catch(e){ showLogin(); }
+    if(state.role === 'admin'){ showConsole(); }
+    else { location.href = '/index.html'; }
+  }catch(e){ storage.remove(TOKEN_KEY); state.token=''; showLogin(); }
 })();
 })();
 </script>

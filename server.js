@@ -24,6 +24,9 @@ const PUBLIC_DIR = path.join(ROOT, 'public');
 const DATA_DIR = path.join(ROOT, 'data');
 const DB_FILE = path.join(DATA_DIR, 'routes.json');
 const ACCOUNTS_FILE = path.join(DATA_DIR, 'accounts.json');
+const ORDERS_FILE = path.join(DATA_DIR, 'orders.json');
+const CARDS_FILE = path.join(DATA_DIR, 'cards.json');
+const USAGE_FILE = path.join(DATA_DIR, 'usage.json');
 const MAIL_CONFIG_FILE = path.join(DATA_DIR, 'mail-config.json');
 const LEGACY_ADMIN_FILE = path.join(DATA_DIR, 'admin.json');
 const PORT = Number(process.env.PORT || 3000);
@@ -32,6 +35,36 @@ const OAUTH_STATE_TTL = 10 * 60 * 1000;
 
 const METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
 const STATUSES = ['online', 'offline', 'deprecated'];
+
+/* ------------------------------ 站点商务配置 ------------------------------ */
+
+const SITE_CONFIG = {
+  siteName: process.env.SITE_NAME || '百亿补贴',
+  contactQQ: process.env.CONTACT_QQ || '3954281206',
+  allowRegister: process.env.ALLOW_REGISTER !== 'false',
+  inviteRate: Number(process.env.INVITE_RATE || 0.1),
+  peakWindows: process.env.PEAK_WINDOWS || '09:00-12:00,14:00-18:00',
+  plans: {
+    hobby: { name: 'Hobby', price: 100, quota: 200, desc: '全时段低峰价，适合日常稳定使用', alwaysOffpeak: true },
+    pro: { name: 'Pro', price: 300, quota: 900, desc: '低峰更省、高峰优先，适合重度使用' }
+  },
+  pricing: {
+    inHit: { offpeak: 0.02, peak: 0.04 },
+    inMiss: { offpeak: 1, peak: 2 },
+    out: { offpeak: 4, peak: 8 }
+  },
+  recharge: {
+    enabled: true,
+    chargeBase: 3,
+    giveBase: 4,
+    min: 10,
+    max: 50000,
+    presets: [
+      { amount: 30, quota: 40 }, { amount: 90, quota: 120 },
+      { amount: 300, quota: 400 }, { amount: 900, quota: 1200 }
+    ]
+  }
+};
 
 /* ------------------------------ 账号与持久化 ------------------------------ */
 
@@ -67,7 +100,7 @@ function seedAdminUser() {
 function seedRoutes() {
   const now = '2026-11-01T09:00:00.000Z';
   const mk = (id, name, model, vendor, path, group, desc, opts) => Object.assign({
-    id, name, model, vendor, path, group,
+    id, name, model, vendor, path, method: 'POST', group,
     description: desc,
     version: 'v1',
     baseUrl: 'https://api.baiyi.example.com',
@@ -93,7 +126,7 @@ function seedRoutes() {
     mk('r_2004', 'Claude 3.5 Sonnet', 'claude-3.5-sonnet', 'Anthropic', '/v1/messages', '对话补全', '平衡能力与速度的旗舰模型，长文写作、代码与分析表现优异。', { context: 200000, priceIn: 22, priceOut: 110, balance: 86000, calls: 267840, latency: 84, tags: ['长文', '代码'] }),
     mk('r_2005', 'Claude 3 Haiku', 'claude-3-haiku', 'Anthropic', '/v1/messages', '对话补全', 'Anthropic 轻量模型，低延迟、低成本，适合高并发在线场景。', { context: 200000, priceIn: 3, priceOut: 15, balance: 210000, calls: 158230, latency: 41, tags: ['轻量'] }),
     mk('r_2006', 'Gemini 1.5 Pro', 'gemini-1.5-pro', 'Google', '/v1beta/models/gemini-1.5-pro:generateContent', '对话补全', '百万级上下文多模态模型，适合长文档、音视频理解与复杂规划。', { context: 1000000, priceIn: 24, priceOut: 96, balance: 64000, calls: 96740, latency: 92, tags: ['超长上下文', '多模态'] }),
-    mk('r_2007', 'Gemini 1.5 Flash', 'gemini-1.5-flash', 'Google', '/v1beta/models/gemini-1.5-flash:generateContent', '对话补全', '高速轻量多模态模型，极低延迟，适合批量处理与实时交互。', { context: 1000000, priceIn: 0.8, priceOut: 3.2, balance: 280000, calls: 312560, latency: 28, tags: ['轻量', '高速'] }),
+    mk('r_2007', 'Gemini 1.5 Flash（免费）', 'gemini-1.5-flash', 'Google', '/v1beta/models/gemini-1.5-flash:generateContent', '对话补全', '高速轻量多模态模型，每日 200 次免费额度，极低延迟，适合批量处理与实时交互。', { context: 1000000, priceIn: 0.8, priceOut: 3.2, balance: 280000, calls: 312560, latency: 28, channel: 'free', dailyLimit: 200, tags: ['轻量', '高速', '免费'] }),
     mk('r_2008', 'DeepSeek Chat', 'deepseek-chat', 'DeepSeek', '/v1/chat/completions', '对话补全', '通用对话模型，价格低廉，中文表现优秀，适合客服与内容生成。', { context: 64000, priceIn: 1, priceOut: 2, balance: 196000, calls: 204380, latency: 45, tags: ['中文', '低价'] }),
     mk('r_2009', 'DeepSeek Reasoner', 'deepseek-reasoner', 'DeepSeek', '/v1/chat/completions', '对话补全', '带思维链的推理模型，擅长数学、逻辑与代码调试。', { context: 64000, priceIn: 4, priceOut: 16, balance: 78000, calls: 76210, latency: 130, tags: ['推理', '代码'] }),
     mk('r_2010', 'Qwen Max', 'qwen-max', '阿里通义', '/v1/chat/completions', '对话补全', '通义千问旗舰模型，中文理解与生成能力突出，支持插件调用。', { context: 32000, priceIn: 20, priceOut: 60, balance: 52000, calls: 118450, latency: 71, tags: ['中文', '旗舰'] }),
@@ -117,6 +150,9 @@ function seedRoutes() {
 function ensureData() {
   if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
   if (!fs.existsSync(DB_FILE)) fs.writeFileSync(DB_FILE, JSON.stringify(seedRoutes(), null, 2));
+  if (!fs.existsSync(ORDERS_FILE)) fs.writeFileSync(ORDERS_FILE, JSON.stringify({ orders: [] }, null, 2));
+  if (!fs.existsSync(CARDS_FILE)) fs.writeFileSync(CARDS_FILE, JSON.stringify({ cards: [] }, null, 2));
+  if (!fs.existsSync(USAGE_FILE)) fs.writeFileSync(USAGE_FILE, JSON.stringify({ records: [] }, null, 2));
   if (!fs.existsSync(ACCOUNTS_FILE)) {
     let users = [];
     // 兼容旧版单管理员文件
@@ -142,8 +178,93 @@ function ensureData() {
 
 function loadRoutes() { return JSON.parse(fs.readFileSync(DB_FILE, 'utf8')); }
 function saveRoutes(list) { fs.writeFileSync(DB_FILE, JSON.stringify(list, null, 2)); }
-function loadAccounts() { return JSON.parse(fs.readFileSync(ACCOUNTS_FILE, 'utf8')); }
+function loadAccounts() {
+  const acc = JSON.parse(fs.readFileSync(ACCOUNTS_FILE, 'utf8'));
+  let changed = false;
+  acc.users = (acc.users || []).map((u) => {
+    const before = JSON.stringify(u);
+    hydrateUser(u);
+    if (JSON.stringify(u) !== before) changed = true;
+    return u;
+  });
+  if (changed) saveAccounts(acc);
+  return acc;
+}
 function saveAccounts(acc) { fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(acc, null, 2)); }
+
+function loadJSON(file, fallback) {
+  try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return fallback; }
+}
+function saveJSON(file, val) { fs.writeFileSync(file, JSON.stringify(val, null, 2)); }
+function loadOrders() { return loadJSON(ORDERS_FILE, { orders: [] }); }
+function saveOrders(d) { saveJSON(ORDERS_FILE, d); }
+function loadCards() { return loadJSON(CARDS_FILE, { cards: [] }); }
+function saveCards(d) { saveJSON(CARDS_FILE, d); }
+function loadUsage() { return loadJSON(USAGE_FILE, { records: [] }); }
+function saveUsage(d) { saveJSON(USAGE_FILE, d); }
+
+/* ---- 业务账号字段补全（兼容旧数据） ---- */
+function newApiKey() { return 'sk_by_' + crypto.randomBytes(24).toString('hex'); }
+function newInviteCode() {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let s = '';
+  for (let i = 0; i < 6; i++) s += alphabet[crypto.randomInt(0, alphabet.length)];
+  return s;
+}
+function todayStr() { return new Date().toISOString().slice(0, 10); }
+
+function hydrateUser(u) {
+  u.plan = u.plan || 'free';
+  u.quotaLimit = Number(u.quotaLimit) || 0;
+  u.quotaUsed = Number(u.quotaUsed) || 0;
+  u.apiKey = u.apiKey || newApiKey();
+  u.inviteCode = u.inviteCode || newInviteCode();
+  u.invitedBy = u.invitedBy || null;
+  u.rebateEarned = Number(u.rebateEarned) || 0;
+  u.freeUsed = u.freeUsed && u.freeUsed.date === todayStr() ? u.freeUsed : { date: todayStr(), count: 0 };
+  u.planExpireAt = u.planExpireAt || null;
+  return u;
+}
+
+function isPeakNow() {
+  const now = new Date();
+  const hm = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+  return SITE_CONFIG.peakWindows.split(',').some((seg) => {
+    const [a, b] = seg.split('-').map((s) => s.trim());
+    return a && b && hm >= a && hm < b;
+  });
+}
+
+function pricingFor(user) {
+  const peak = isPeakNow();
+  const offpeak = !peak || (user && user.plan === 'hobby' && SITE_CONFIG.plans.hobby.alwaysOffpeak);
+  const tier = offpeak ? 'offpeak' : 'peak';
+  return {
+    peakNow: peak,
+    applied: tier,
+    inHit: SITE_CONFIG.pricing.inHit[tier],
+    inMiss: SITE_CONFIG.pricing.inMiss[tier],
+    out: SITE_CONFIG.pricing.out[tier]
+  };
+}
+
+function quotaLeft(u) { return Math.max(0, (Number(u.quotaLimit) || 0) - (Number(u.quotaUsed) || 0)); }
+
+function userByApiKey(key) {
+  const acc = loadAccounts();
+  const user = acc.users.find((u) => u.apiKey === key);
+  return user ? { acc, user: hydrateUser(user) } : null;
+}
+
+function upstreamKeyFor(vendor) {
+  if (process.env.UPSTREAM_KEY) return process.env.UPSTREAM_KEY;
+  const v = String(vendor || '').toUpperCase().replace(/[^A-Z0-9]+/g, '_');
+  return process.env['UPSTREAM_' + v + '_KEY'] || '';
+}
+
+function routeByModel(modelId) {
+  return loadRoutes().find((r) => r.model === modelId && r.status !== 'deprecated');
+}
 
 /* ------------------------------ 邮件（QQ SMTP，零依赖） ------------------------------ */
 
@@ -496,6 +617,9 @@ function cleanRoute(body, existing) {
       priceIn: dec(body.priceIn, 0),
       priceOut: dec(body.priceOut, 0),
       balance: num(body.balance, existing ? existing.balance : 0),
+      channel: body.channel === 'free' ? 'free' : (existing ? existing.channel : 'paid'),
+      dailyLimit: existing && !body.dailyLimit ? existing.dailyLimit : num(body.dailyLimit, 0) || null,
+      upstreamModel: str(body.upstreamModel, 60) || (existing && existing.upstreamModel) || str(body.model, 60),
       tags
     }
   };
@@ -520,6 +644,58 @@ function applyFilters(list, q, method, group, status) {
   return out;
 }
 
+function publicModels() {
+  return loadRoutes()
+    .filter((r) => r.status !== 'deprecated')
+    .map((r) => ({
+      id: r.model,
+      object: 'model',
+      owned_by: r.vendor,
+      label: r.name,
+      channel: r.channel || 'paid',
+      context_length: r.context || 0,
+      billable: r.channel !== 'free',
+      daily_limit: r.dailyLimit || null,
+      description: r.description,
+      path: r.path,
+      vendor: r.vendor,
+      priceIn: r.priceIn,
+      priceOut: r.priceOut,
+      status: r.status,
+      tags: r.tags || []
+    }));
+}
+
+function buildMeta(origin) {
+  const models = publicModels();
+  const free = models.find((m) => m.channel === 'free');
+  const pricing = pricingFor(null);
+  return {
+    siteName: SITE_CONFIG.siteName,
+    domain: (origin || '').replace(/^https?:\/\//, ''),
+    contactQQ: SITE_CONFIG.contactQQ,
+    allowRegister: SITE_CONFIG.allowRegister,
+    pricing: {
+      peakNow: pricing.peakNow,
+      peakWindows: SITE_CONFIG.peakWindows,
+      applied: pricing.applied,
+      inHit: SITE_CONFIG.pricing.inHit,
+      inMiss: SITE_CONFIG.pricing.inMiss,
+      out: SITE_CONFIG.pricing.out,
+      priceIn: pricing.inMiss,
+      priceOut: pricing.out,
+      priceCache: pricing.inHit
+    },
+    free: free
+      ? { enabled: true, model: free.id, label: free.label, dailyLimit: free.daily_limit || 200, billable: false }
+      : { enabled: false, model: '', label: '', dailyLimit: 0, billable: false },
+    models,
+    plans: SITE_CONFIG.plans,
+    recharge: SITE_CONFIG.recharge,
+    inviteRate: SITE_CONFIG.inviteRate
+  };
+}
+
 function computeStats(list) {
   const total = list.length;
   const byStatus = STATUSES.reduce((acc, s) => (acc[s] = list.filter((r) => r.status === s).length, acc), {});
@@ -538,6 +714,92 @@ const server = http.createServer(async (req, res) => {
   const p = url.pathname;
 
   try {
+    /* ---- OpenAI 兼容转发（/v1） ---- */
+    if (p === '/v1/models' && req.method === 'GET') {
+      const data = publicModels().map((m) => ({
+        id: m.id, object: 'model', owned_by: m.owned_by, label: m.label, context_length: m.context_length
+      }));
+      return sendJson(res, 200, { object: 'list', data });
+    }
+
+    if (p === '/v1/chat/completions' && req.method === 'POST') {
+      const key = String(req.headers['authorization'] || '').replace(/^Bearer\s+/i, '').trim();
+      const found = userByApiKey(key);
+      if (!found) return sendJson(res, 401, { error: { message: 'API Key 无效或已过期', type: 'invalid_request_error' } });
+      const { acc, user } = found;
+      const body = await readBody(req);
+      const route = routeByModel(String(body.model || ''));
+      if (!route) return sendJson(res, 400, { error: { message: '模型不可用：' + (body.model || ''), type: 'invalid_request_error' } });
+
+      const isFree = route.channel === 'free';
+      if (isFree) {
+        const limit = route.dailyLimit || 200;
+        if (user.freeUsed.date !== todayStr()) user.freeUsed = { date: todayStr(), count: 0 };
+        if (user.freeUsed.count >= limit) {
+          return sendJson(res, 429, { error: { message: `免费模型今日 ${limit} 次额度已用完`, type: 'rate_limit_error' } });
+        }
+      } else if (quotaLeft(user) <= 0) {
+        return sendJson(res, 402, { error: { message: '账户额度已用尽，请充值或兑换套餐', type: 'insufficient_quota' } });
+      }
+
+      const upKey = upstreamKeyFor(route.vendor);
+      const baseUrl = String(route.baseUrl || process.env.UPSTREAM_BASE || '').replace(/\/+$/, '');
+      if (!upKey || !baseUrl) {
+        return sendJson(res, 502, { error: { message: '上游渠道未配置密钥或地址，请联系管理员', type: 'upstream_not_configured' } });
+      }
+
+      let upstreamRes, upstreamText;
+      try {
+        upstreamRes = await fetch(baseUrl + '/v1/chat/completions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + upKey },
+          body: JSON.stringify(body)
+        });
+        upstreamText = await upstreamRes.text();
+      } catch (e) {
+        return sendJson(res, 502, { error: { message: '上游请求失败：' + (e.message || ''), type: 'upstream_error' } });
+      }
+
+      let upstreamJson = null;
+      try { upstreamJson = JSON.parse(upstreamText); } catch { upstreamJson = null; }
+
+      if (upstreamRes.ok && upstreamJson) {
+        const u = upstreamJson.usage || {};
+        const promptTokens = Number(u.prompt_tokens) || 0;
+        const cached = (u.prompt_tokens_details && Number(u.prompt_tokens_details.cached_tokens)) || 0;
+        const completionTokens = Number(u.completion_tokens) || 0;
+        const totalTokens = Number(u.total_tokens) || (promptTokens + completionTokens);
+        let cost = 0;
+        if (!isFree) {
+          const price = pricingFor(user);
+          const hit = Math.min(cached, promptTokens);
+          const miss = Math.max(0, promptTokens - hit);
+          cost = Math.round(((miss / 1e6) * price.inMiss + (hit / 1e6) * price.inHit + (completionTokens / 1e6) * price.out) * 10000) / 10000;
+          user.quotaUsed = Math.round((user.quotaUsed + cost) * 100) / 100;
+        } else {
+          user.freeUsed.count += 1;
+        }
+        const usageDb = loadUsage();
+        usageDb.records.push({
+          id: 'u_' + crypto.randomBytes(5).toString('hex'),
+          userId: user.id, username: user.username, model: route.model,
+          channel: route.channel || 'paid', promptTokens, cachedTokens: cached,
+          completionTokens, totalTokens, cost, free: isFree,
+          createdAt: new Date().toISOString()
+        });
+        saveUsage(usageDb);
+        saveAccounts(acc);
+      }
+
+      res.writeHead(upstreamRes.status, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(upstreamText);
+      return;
+    }
+
+    if (p.startsWith('/v1/')) {
+      return sendJson(res, 404, { error: { message: '接口不存在', type: 'not_found' } });
+    }
+
     if (p.startsWith('/api/')) {
       /* ---- 健康检查 ---- */
       if (p === '/api/health' && req.method === 'GET') {
@@ -629,15 +891,70 @@ const server = http.createServer(async (req, res) => {
       }
 
       /* ---- 账号密码登录 ---- */
+      const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/;
+
+      /* ---- 注册（普通用户，真实落库 + scrypt 加盐哈希） ---- */
+      if (p === '/api/register' && req.method === 'POST') {
+        if (!SITE_CONFIG.allowRegister) return sendJson(res, 403, { error: '当前已关闭自助注册' });
+        const body = await readBody(req);
+        const username = String(body.username || '').trim();
+        const email = String(body.email || '').trim().toLowerCase();
+        const password = String(body.password || '');
+        const displayName = String(body.displayName || '').trim();
+        const inviteCode = String(body.inviteCode || '').trim().toUpperCase();
+        const errs = [];
+        const emailOk = EMAIL_RE.test(email);
+        if (!username && !emailOk) errs.push('请输入用户名或邮箱');
+        if (username && !USERNAME_RE.test(username)) errs.push('用户名需为 3-20 位字母、数字或下划线');
+        if (email && !emailOk) errs.push('邮箱格式不正确');
+        if (password.length < 6) errs.push('密码至少 6 位');
+        if (errs.length) return sendJson(res, 400, { errors: errs });
+
+        const acc = loadAccounts();
+        const uname = username || ('mail_' + crypto.randomBytes(4).toString('hex'));
+        if (acc.users.some((u) => u.username === uname)) return sendJson(res, 409, { error: '用户名已被注册' });
+        if (email && acc.users.some((u) => (u.email || '').toLowerCase() === email)) return sendJson(res, 409, { error: '该邮箱已被注册' });
+
+        let inviter = null;
+        if (inviteCode) {
+          inviter = acc.users.find((u) => (u.inviteCode || '') === inviteCode);
+          if (!inviter) return sendJson(res, 400, { error: '邀请码无效' });
+        }
+
+        const salt = crypto.randomBytes(16).toString('hex');
+        const user = {
+          id: 'u_' + crypto.randomBytes(6).toString('hex'),
+          username: uname,
+          displayName: displayName || uname,
+          email,
+          salt,
+          hash: hashPassword(password, salt),
+          role: 'member',
+          plan: 'free',
+          quotaLimit: 0,
+          quotaUsed: 0,
+          invitedBy: inviter ? inviter.id : null,
+          providers: { password: { registeredAt: new Date().toISOString() } },
+          createdAt: new Date().toISOString()
+        };
+        hydrateUser(user);
+        acc.users.push(user);
+        saveAccounts(acc);
+        const token = issueToken(user, 'password');
+        return sendJson(res, 200, { ok: true, token, username: user.username, displayName: user.displayName, role: user.role, provider: 'password', email: user.email || '' });
+      }
+
+      /* ---- 登录（用户名或邮箱 + 密码，管理员与普通用户同一入口） ---- */
       if (p === '/api/login' && req.method === 'POST') {
         const body = await readBody(req);
+        const ident = String(body.username || '').trim();
         const acc = loadAccounts();
-        const user = acc.users.find((u) => u.username === String(body.username || '').trim());
+        const user = acc.users.find((u) => u.username === ident || (u.email || '').toLowerCase() === ident.toLowerCase());
         if (!user || !verifyPassword(user, body.password)) {
           return sendJson(res, 401, { error: '账号或密码不正确' });
         }
         const token = issueToken(user, 'password');
-        return sendJson(res, 200, { ok: true, token, username: user.username, displayName: user.displayName, provider: 'password' });
+        return sendJson(res, 200, { ok: true, token, username: user.username, displayName: user.displayName, role: user.role, provider: 'password', email: user.email || '' });
       }
 
       /* ---- 邮箱验证码登录 ---- */
@@ -696,7 +1013,7 @@ const server = http.createServer(async (req, res) => {
           saveAccounts(acc);
         }
         const token = issueToken(user, 'email');
-        return sendJson(res, 200, { ok: true, token, username: user.username, displayName: user.displayName, provider: 'email' });
+        return sendJson(res, 200, { ok: true, token, username: user.username, displayName: user.displayName, role: user.role, provider: 'email', email: user.email || '' });
       }
 
       if (p === '/api/logout' && req.method === 'POST') {
@@ -708,17 +1025,162 @@ const server = http.createServer(async (req, res) => {
       if (p === '/api/me' && req.method === 'GET') {
         const auth = resolveAuth(req);
         if (!auth) return sendJson(res, 401, { error: '未登录' });
+        const acc = loadAccounts();
+        const user = acc.users.find((u) => u.id === auth.accountId) || {};
+        hydrateUser(user);
         return sendJson(res, 200, {
           ok: true,
           username: auth.username,
           displayName: auth.displayName,
           provider: auth.provider,
           role: auth.role,
-          email: auth.email || ''
+          email: auth.email || '',
+          plan: user.plan || 'free',
+          quotaLimit: user.quotaLimit || 0,
+          quotaUsed: user.quotaUsed || 0,
+          quotaLeft: quotaLeft(user),
+          apiKey: user.apiKey || '',
+          inviteCode: user.inviteCode || '',
+          rebateEarned: user.rebateEarned || 0,
+          freeUsed: user.freeUsed || { date: todayStr(), count: 0 },
+          planExpireAt: user.planExpireAt || null
+        });
+      }
+
+      /* ---- 会员侧：订单 / 用量 / Key / 兑换码 / 邀请 ---- */
+      if (p === '/api/orders' && req.method === 'GET') {
+        const auth = resolveAuth(req);
+        if (!auth) return sendJson(res, 401, { error: '未登录' });
+        const { orders } = loadOrders();
+        const mine = orders.filter((o) => o.userId === auth.accountId)
+          .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+        return sendJson(res, 200, { orders: mine });
+      }
+
+      if (p === '/api/orders' && req.method === 'POST') {
+        const auth = resolveAuth(req);
+        if (!auth) return sendJson(res, 401, { error: '未登录' });
+        const body = await readBody(req);
+        const kind = body.kind === 'recharge' ? 'recharge' : 'plan';
+        const contact = String(body.contact || '').trim().slice(0, 60);
+        const remark = String(body.remark || '').trim().slice(0, 120);
+        const ordersDb = loadOrders();
+        let order;
+
+        if (kind === 'plan') {
+          const planKey = String(body.plan || '').trim();
+          const plan = SITE_CONFIG.plans[planKey];
+          if (!plan) return sendJson(res, 400, { error: '套餐不存在' });
+          order = {
+            id: 'o_' + crypto.randomBytes(5).toString('hex'),
+            userId: auth.accountId, username: auth.username,
+            kind: 'plan', plan: planKey, planName: plan.name,
+            amount: plan.price, quota: plan.quota, contact, remark,
+            status: 'pending', createdAt: new Date().toISOString(), paidAt: null, operator: null
+          };
+        } else {
+          const rc = SITE_CONFIG.recharge;
+          const amount = Number(body.amount);
+          if (!Number.isFinite(amount) || amount < rc.min || amount > rc.max) {
+            return sendJson(res, 400, { error: `充值金额需在 ¥${rc.min} ~ ¥${rc.max} 之间` });
+          }
+          const quota = Math.round(amount * (rc.giveBase / rc.chargeBase) * 100) / 100;
+          order = {
+            id: 'o_' + crypto.randomBytes(5).toString('hex'),
+            userId: auth.accountId, username: auth.username,
+            kind: 'recharge', plan: null, planName: '额度充值',
+            amount: Math.round(amount * 100) / 100, quota, contact, remark,
+            status: 'pending', createdAt: new Date().toISOString(), paidAt: null, operator: null
+          };
+        }
+        ordersDb.orders.push(order);
+        saveOrders(ordersDb);
+        return sendJson(res, 201, { order });
+      }
+
+      if (p === '/api/usage' && req.method === 'GET') {
+        const auth = resolveAuth(req);
+        if (!auth) return sendJson(res, 401, { error: '未登录' });
+        const { records } = loadUsage();
+        const mine = records.filter((r) => r.userId === auth.accountId)
+          .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+        const totalTokens = mine.reduce((s, r) => s + (r.totalTokens || 0), 0);
+        const totalCost = Math.round(mine.reduce((s, r) => s + (r.cost || 0), 0) * 100) / 100;
+        const byModel = {};
+        mine.forEach((r) => {
+          byModel[r.model] = byModel[r.model] || { calls: 0, tokens: 0, cost: 0 };
+          byModel[r.model].calls += 1;
+          byModel[r.model].tokens += r.totalTokens || 0;
+          byModel[r.model].cost = Math.round((byModel[r.model].cost + (r.cost || 0)) * 100) / 100;
+        });
+        return sendJson(res, 200, {
+          records: mine,
+          stats: { calls: mine.length, totalTokens, totalCost, byModel }
+        });
+      }
+
+      if (p === '/api/rotate-key' && req.method === 'POST') {
+        const auth = resolveAuth(req);
+        if (!auth) return sendJson(res, 401, { error: '未登录' });
+        const acc = loadAccounts();
+        const user = acc.users.find((u) => u.id === auth.accountId);
+        if (!user) return sendJson(res, 401, { error: '账号不存在' });
+        user.apiKey = newApiKey();
+        saveAccounts(acc);
+        return sendJson(res, 200, { ok: true, apiKey: user.apiKey });
+      }
+
+      if (p === '/api/redeem' && req.method === 'POST') {
+        const auth = resolveAuth(req);
+        if (!auth) return sendJson(res, 401, { error: '未登录' });
+        const body = await readBody(req);
+        const code = String(body.code || '').trim().toUpperCase();
+        if (!code) return sendJson(res, 400, { error: '请输入兑换码' });
+        const cardsDb = loadCards();
+        const card = cardsDb.cards.find((c) => c.code === code);
+        if (!card || card.status !== 'unused') return sendJson(res, 400, { error: '兑换码无效或已使用' });
+        const acc = loadAccounts();
+        const user = acc.users.find((u) => u.id === auth.accountId);
+        if (!user) return sendJson(res, 401, { error: '账号不存在' });
+        hydrateUser(user);
+        user.quotaLimit = Math.round((user.quotaLimit + (card.quota || 0)) * 100) / 100;
+        if (card.plan) user.plan = card.plan;
+        card.status = 'used';
+        card.usedBy = user.id;
+        card.usedAt = new Date().toISOString();
+        saveAccounts(acc);
+        saveCards(cardsDb);
+        return sendJson(res, 200, { ok: true, quota: card.quota, plan: card.plan || null, quotaLeft: quotaLeft(user) });
+      }
+
+      if (p === '/api/invite' && req.method === 'GET') {
+        const auth = resolveAuth(req);
+        if (!auth) return sendJson(res, 401, { error: '未登录' });
+        const acc = loadAccounts();
+        const user = acc.users.find((u) => u.id === auth.accountId);
+        if (!user) return sendJson(res, 401, { error: '账号不存在' });
+        const referrals = acc.users.filter((u) => u.invitedBy === user.id).map((u) => ({
+          username: u.username, displayName: u.displayName, createdAt: u.createdAt, plan: u.plan
+        }));
+        return sendJson(res, 200, {
+          code: user.inviteCode,
+          rate: SITE_CONFIG.inviteRate,
+          rebateEarned: user.rebateEarned || 0,
+          referrals
         });
       }
 
       /* ---- 只读接口 ---- */
+      if (p === '/api/meta' && req.method === 'GET') {
+        return sendJson(res, 200, buildMeta(originOf(req)));
+      }
+      if (p === '/api/plans' && req.method === 'GET') {
+        const meta = buildMeta(originOf(req));
+        return sendJson(res, 200, {
+          plans: meta.plans, pricing: meta.pricing, models: meta.models,
+          free: meta.free, recharge: meta.recharge, contactQQ: meta.contactQQ
+        });
+      }
       if (p === '/api/stats' && req.method === 'GET') {
         return sendJson(res, 200, computeStats(loadRoutes()));
       }
@@ -744,9 +1206,140 @@ const server = http.createServer(async (req, res) => {
         return sendJson(res, 200, { route });
       }
 
-      /* ---- 写接口（需鉴权） ---- */
+      /* ---- 写接口（需鉴权，且仅管理员） ---- */
       const auth = resolveAuth(req);
       if (!auth) return sendJson(res, 401, { error: '未登录或会话已过期' });
+      if (auth.role !== 'admin') return sendJson(res, 403, { error: '仅管理员可执行此操作' });
+
+      const safeUser = (u) => ({
+        id: u.id, username: u.username, displayName: u.displayName, email: u.email || '',
+        role: u.role, plan: u.plan, quotaLimit: u.quotaLimit || 0, quotaUsed: u.quotaUsed || 0,
+        quotaLeft: quotaLeft(u), apiKey: u.apiKey, inviteCode: u.inviteCode,
+        rebateEarned: u.rebateEarned || 0, invitedBy: u.invitedBy, freeUsed: u.freeUsed,
+        planExpireAt: u.planExpireAt || null, createdAt: u.createdAt
+      });
+
+      /* ---- 后台：用户管理 ---- */
+      if (p === '/api/panel/users' && req.method === 'GET') {
+        const q = (url.searchParams.get('q') || '').toLowerCase();
+        const acc = loadAccounts();
+        let list = acc.users;
+        if (q) list = list.filter((u) =>
+          u.username.toLowerCase().includes(q) ||
+          (u.displayName || '').toLowerCase().includes(q) ||
+          (u.email || '').toLowerCase().includes(q));
+        return sendJson(res, 200, { users: list.map(safeUser) });
+      }
+
+      if (p === '/api/panel/users' && req.method === 'PUT') {
+        const body = await readBody(req);
+        const acc = loadAccounts();
+        const user = acc.users.find((u) => u.id === body.id);
+        if (!user) return sendJson(res, 404, { error: '用户不存在' });
+        if (body.plan && ['free', 'hobby', 'pro'].includes(body.plan)) user.plan = body.plan;
+        if (Number.isFinite(Number(body.quotaLimit))) user.quotaLimit = Math.max(0, Math.round(Number(body.quotaLimit) * 100) / 100);
+        if (body.resetUsage) user.quotaUsed = 0;
+        if (body.displayName) user.displayName = String(body.displayName).trim().slice(0, 30);
+        saveAccounts(acc);
+        return sendJson(res, 200, { user: safeUser(user) });
+      }
+
+      if (p === '/api/panel/users/password' && req.method === 'POST') {
+        const body = await readBody(req);
+        const acc = loadAccounts();
+        const user = acc.users.find((u) => u.id === body.id);
+        if (!user) return sendJson(res, 404, { error: '用户不存在' });
+        if (String(body.password || '').length < 6) return sendJson(res, 400, { error: '密码至少 6 位' });
+        user.salt = crypto.randomBytes(16).toString('hex');
+        user.hash = hashPassword(body.password, user.salt);
+        saveAccounts(acc);
+        return sendJson(res, 200, { ok: true });
+      }
+
+      /* ---- 后台：订单与到账 ---- */
+      if (p === '/api/panel/orders' && req.method === 'GET') {
+        const { orders } = loadOrders();
+        return sendJson(res, 200, { orders: orders.slice().sort((a, b) => b.createdAt.localeCompare(a.createdAt)) });
+      }
+
+      if (p === '/api/panel/orders/paid' && req.method === 'POST') {
+        const body = await readBody(req);
+        const ordersDb = loadOrders();
+        const order = ordersDb.orders.find((o) => o.id === body.id);
+        if (!order) return sendJson(res, 404, { error: '订单不存在' });
+        if (order.status === 'paid') return sendJson(res, 400, { error: '订单已到账' });
+        const acc = loadAccounts();
+        const user = acc.users.find((u) => u.id === order.userId);
+        if (!user) return sendJson(res, 404, { error: '下单用户不存在' });
+        hydrateUser(user);
+        user.quotaLimit = Math.round((user.quotaLimit + (order.quota || 0)) * 100) / 100;
+        if (order.kind === 'plan' && order.plan) {
+          user.plan = order.plan;
+          const days = Number(body.planDays) || 30;
+          user.planExpireAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
+        }
+        // 邀请返佣
+        if (user.invitedBy) {
+          const referrer = acc.users.find((u) => u.id === user.invitedBy);
+          if (referrer) {
+            const rebate = Math.round((order.quota || 0) * SITE_CONFIG.inviteRate * 100) / 100;
+            referrer.rebateEarned = Math.round(((referrer.rebateEarned || 0) + rebate) * 100) / 100;
+          }
+        }
+        order.status = 'paid';
+        order.paidAt = new Date().toISOString();
+        order.operator = auth.username;
+        saveAccounts(acc);
+        saveOrders(ordersDb);
+        return sendJson(res, 200, { ok: true, order, user: safeUser(user) });
+      }
+
+      /* ---- 后台：兑换卡密 ---- */
+      if (p === '/api/panel/cards' && req.method === 'GET') {
+        const { cards } = loadCards();
+        return sendJson(res, 200, { cards: cards.slice().sort((a, b) => b.createdAt.localeCompare(a.createdAt)) });
+      }
+
+      if (p === '/api/panel/cards' && req.method === 'POST') {
+        const body = await readBody(req);
+        const count = Math.min(50, Math.max(1, Number(body.count) || 1));
+        const quota = Math.max(0, Number(body.quota) || 0);
+        const plan = body.plan && ['hobby', 'pro'].includes(body.plan) ? body.plan : null;
+        const cardsDb = loadCards();
+        const batch = 'b_' + crypto.randomBytes(3).toString('hex');
+        const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        const made = [];
+        for (let i = 0; i < count; i++) {
+          let code = '';
+          for (let j = 0; j < 12; j++) code += alphabet[crypto.randomInt(0, alphabet.length)];
+          const card = {
+            id: 'c_' + crypto.randomBytes(5).toString('hex'),
+            code, quota, plan, batch, status: 'unused',
+            usedBy: null, usedAt: null, createdAt: new Date().toISOString()
+          };
+          cardsDb.cards.push(card);
+          made.push(card);
+        }
+        saveCards(cardsDb);
+        return sendJson(res, 201, { cards: made });
+      }
+
+      /* ---- 后台：邀请返佣 ---- */
+      if (p === '/api/panel/referrals' && req.method === 'GET') {
+        const acc = loadAccounts();
+        const byInviter = {};
+        acc.users.forEach((u) => {
+          if (u.invitedBy) {
+            byInviter[u.invitedBy] = byInviter[u.invitedBy] || [];
+            byInviter[u.invitedBy].push({ username: u.username, displayName: u.displayName, plan: u.plan, createdAt: u.createdAt });
+          }
+        });
+        const list = Object.keys(byInviter).map((id) => {
+          const inv = acc.users.find((u) => u.id === id);
+          return inv ? { inviter: inv.username, inviteCode: inv.inviteCode, rebateEarned: inv.rebateEarned || 0, invitees: byInviter[id] } : null;
+        }).filter(Boolean);
+        return sendJson(res, 200, { referrals: list });
+      }
 
       if (p === '/api/routes' && req.method === 'POST') {
         const body = await readBody(req);
